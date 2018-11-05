@@ -9,7 +9,6 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -27,41 +26,35 @@ public class ElectionApi {
     @ApiOperation(value = "Get election List")
     public List<ElectionOutput> getAll(){
     	return electionService.getAll();
-        //return new ArrayList<>();
     }
 
     @GetMapping("/year/{year}")
     @ApiOperation(value = "Get election List by year")
     public List<ElectionOutput> getByYear(@PathVariable Integer year){
         return electionService.getByYear(year);
-    	//return new ArrayList<>();
     }
 
     @GetMapping("/{electionId}")
     @ApiOperation(value = "Get election by Id")
     public ElectionOutput getById(@PathVariable Long electionId){
         return electionService.getById(electionId);
-    	//return new ElectionOutput();
     }
 
     @PostMapping("/")
     @ApiOperation(value = "Create new election")
     public ElectionOutput create(@RequestBody ElectionInput electionInput){
     	return electionService.create(electionInput);
-        //return new ElectionOutput();
     }
 
     @PutMapping("/{electionId}")
     @ApiOperation(value = "Update election")
     public ElectionOutput update(@PathVariable Long electionId, @RequestBody ElectionInput electionInput){
     	return electionService.update(electionId, electionInput);
-        //return new ElectionOutput();
     }
 
     @DeleteMapping("/{electionId}")
     @ApiOperation(value = "Delete election")
     public GenericOutput delete(@PathVariable Long electionId){
     	return electionService.delete(electionId);
-        //return new GenericOutput("OK");
     }
 }
