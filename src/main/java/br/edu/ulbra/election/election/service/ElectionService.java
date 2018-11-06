@@ -35,8 +35,8 @@ public class ElectionService {
     }
 	
 	public List<ElectionOutput> getAll(){
-        Type candidateOutputListType = new TypeToken<List<ElectionOutput>>(){}.getType();
-        return modelMapper.map(electionRepository.findAll(), candidateOutputListType);
+        Type electionOutputListType = new TypeToken<List<ElectionOutput>>(){}.getType();
+        return modelMapper.map(electionRepository.findAll(), electionOutputListType);
     }
 	
 	public ElectionOutput getById(Long electionId){
@@ -52,13 +52,9 @@ public class ElectionService {
         return modelMapper.map(election, ElectionOutput.class);
 	}
 	
-	public List<ElectionOutput> getByYear(Integer year){
-        if (year < 1970 || year > 2100){
-            throw new GenericOutputException(MESSAGE_INVALID_YEAR);
-        }
-        
-        Type candidateOutputListType = new TypeToken<List<ElectionOutput>>(){}.getType();
-        return modelMapper.map(electionRepository.findByYear(year), candidateOutputListType);
+	public List<ElectionOutput> getByYear(Integer year){       
+        Type electionOutputListType = new TypeToken<List<ElectionOutput>>(){}.getType();
+        return modelMapper.map(electionRepository.findByYear(year), electionOutputListType);
     }
 	
 	public ElectionOutput create(ElectionInput electionInput) {
@@ -111,7 +107,7 @@ public class ElectionService {
             throw new GenericOutputException("Invalid State Code");
         }
         
-        if (electionInput.getYear() < 1970 || electionInput.getYear() > 2100){
+        if (electionInput.getYear() < 2000 || electionInput.getYear() >= 2200){
             throw new GenericOutputException(MESSAGE_INVALID_YEAR);
         }
     }
