@@ -3,7 +3,9 @@ package br.edu.ulbra.election.election.service;
 import java.lang.reflect.Type;
 import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
+import org.assertj.core.util.Arrays;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,6 @@ import br.edu.ulbra.election.election.model.Election;
 import br.edu.ulbra.election.election.output.v1.ElectionOutput;
 import br.edu.ulbra.election.election.output.v1.GenericOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
-import javassist.tools.web.Viewer;
 
 @Service
 public class ElectionService {
@@ -23,6 +24,10 @@ public class ElectionService {
 	private final ElectionRepository electionRepository;
 	private final ModelMapper modelMapper;
 
+	private final String stateCodes[] = {"AC", "AL", "AM", "AP", "BA","BR", 
+										"CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", 
+										"PI", "RJ", "RN", "RO", "RS", "RR", "SC", "SE", "SP", "TO"};
+	
 	private static final String MESSAGE_INVALID_ID = "Invalid id";
 	private static final String MESSAGE_ELECTION_NOT_FOUND = "Election not found";
 
@@ -109,31 +114,17 @@ public class ElectionService {
 			throw new GenericOutputException("Invalid Description");
 		}
 
-		if (StringUtils.isBlank(electionInput.getStateCode())){
+		if (StringUtils.isBlank(electionInput.getStateCode()) || 
+				!ArrayUtils.contains(stateCodes, electionInput.getStateCode())){
 			throw new GenericOutputException("Invalid State Code");
 		}
 
 		if(electionInput.getDescription().length() < 5) {
-			throw new GenericOutputException("A Descrição teve ter no minimo 5 caracteres");
+			throw new GenericOutputException("Description must be at least 5 characters");
 		}
 
-		if(Integer.toString(electionInput.getYear()).length() != 4 ) {
-			throw new GenericOutputException("Ano teve ter 4 digitos");
-		}
-		if(electionInput.getYear() <= 2000 || electionInput.getYear() > 2200) {
-			throw new GenericOutputException("Invalid Year");
-		}
-
-		String Estados[] = {"AC", "AL", "AM", "AP", "BA","BR", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RO", "RS", "RR", "SC", "SE", "SP", "TO"};
-		int status = 0;
-		String estado = electionInput.getStateCode();
-		for(String x : Estados)
-		{
-			if(estado .equals(x))
-				status = 1;		
-		}
-		if(status != 1) {
-			throw new GenericOutputException("Invalid State Code");
+		if(electionInput.getYear() < 2000 || electionInput.getYear() >= 2200) {
+			throw new GenericOutputException("Year must be greater than or equal to 2000 and less than 2200");
 		}
 	}
 
