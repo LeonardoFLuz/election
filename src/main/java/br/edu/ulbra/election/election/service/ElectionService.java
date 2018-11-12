@@ -17,7 +17,6 @@ import br.edu.ulbra.election.election.output.v1.GenericOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
 import javassist.tools.web.Viewer;
 
-
 @Service
 public class ElectionService {
 
