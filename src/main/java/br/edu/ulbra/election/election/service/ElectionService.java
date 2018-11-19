@@ -83,6 +83,11 @@ public class ElectionService {
         validateInput(electionInput);
         validateDuplicate(electionInput, electionId);
 
+        Vote vote = voteRepository.findById(electionId).orElse(null);
+        if (electionId == vote.getElection().getId()){
+        	throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
+        }
+        
         Election election = electionRepository.findById(electionId).orElse(null);
         if (election == null){
             throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
@@ -100,11 +105,10 @@ public class ElectionService {
             throw new GenericOutputException(MESSAGE_INVALID_ID);
         }
         
-        Vote vote = voteRepository.getById(electionId);
-        if (vote.getElectionId() == electionId){
-            throw new GenericOutputException(MESSAGE_INVALID_ID);
+        Vote vote = voteRepository.findById(electionId).orElse(null);
+        if (electionId == vote.getElection().getId()){
+        	throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
         }
-        
         
                 
         Election election = electionRepository.findById(electionId).orElse(null);
@@ -141,13 +145,8 @@ public class ElectionService {
         if (electionInput.getYear() == null || electionInput.getYear() < 2000 || electionInput.getYear() > 2200){
             throw new GenericOutputException("Invalid Year");
         }
-    }
-    public ElectionOutput toElectionOutput(Election election){
-    	ElectionOutput electionOutput = modelMapper.map(election, ElectionOutput.class);
-    	CandidateOutput candidateOutput = candidateClientService.getById(election.getCandidateId());
-    	electionOutput.setCandidateOutput(candidateOutput);
         
-        return electionOutput;
+        
     }
-
+    
 }
