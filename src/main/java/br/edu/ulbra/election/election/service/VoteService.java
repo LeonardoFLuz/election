@@ -84,28 +84,56 @@ public class VoteService {
 
         voteRepository.save(vote);
 
-        return new GenericOutput("OK");
-    }
+		voteRepository.save(vote);
 
-    public GenericOutput multiple(List<VoteInput> voteInputList){
-        for (VoteInput voteInput : voteInputList){
-            this.electionVote(voteInput);
-        }
-        return new GenericOutput("OK");
-    }
+		return new GenericOutput("OK");
+	}
 
-    public Election validateInput(Long electionId, VoteInput voteInput){
-        Election election = electionRepository.findById(electionId).orElse(null);
-        if (election == null){
-            throw new GenericOutputException("Invalid Election");
-        }
-        
-        if (voteInput.getVoterId() == null){
-            throw new GenericOutputException("Invalid Voter");
-        }
-        
-        // TODO: Validate voter
+	public GenericOutput multiple(List<VoteInput> voteInputList){
+		for (VoteInput voteInput : voteInputList){
+			this.electionVote(voteInput);
+		}
+		return new GenericOutput("OK");
+	}
 
-        return election;
-    }
+	public Election validateInput(Long electionId, VoteInput voteInput){
+		Election election = electionRepository.findById(electionId).orElse(null);
+		if (election == null){
+			throw new GenericOutputException("Invalid Election");
+		}
+		if (voteInput.getVoterId() == null){
+			throw new GenericOutputException("Invalid Voter");
+		}
+		try {
+        	voterClientService.getById(voteInput.getVoterId());
+        } catch (FeignException e){
+            if (e.status() == 500) {
+                throw new GenericOutputException("Invalid Voter");
+            }
+        }
+		if (voteInput.getElectionId() == null){
+			throw new GenericOutputException("Invalid Election");
+		}
+		
+		try {
+			electionClientService.getById(voteInput.getElectionId());
+		} catch (FeignException e){
+			if (e.status() == 500) {
+				throw new GenericOutputException("Invalid Election");
+			}
+		}
+		// TODO: Validate voter
+
+		return election;
+	}
+	 public VoteOutput toCVoteOutput(Vote vote){
+	        VoteOutput voteOutput = modelMapper.map(vote, VoteOutput.class);
+	        ElectionOutput electionOutput = electionClientService.getById(voteOutput.getElectionId());
+	        voteOutput.setElectionOutput(electionOutput);
+	        
+	        VoterOutput voterOutput = voterClientService.getById(vote.getVoterId());
+	        voteOutput.setVoterOutput(voterOutput);
+	        return voteOutput;
+	    }
+	
 }

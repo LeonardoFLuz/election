@@ -1,5 +1,6 @@
 package br.edu.ulbra.election.election.output.v1;
 
+import br.edu.ulbra.election.election.output.v1.VoterOutput;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
