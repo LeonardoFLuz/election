@@ -1,12 +1,16 @@
 package br.edu.ulbra.election.election.service;
 
+import br.edu.ulbra.election.election.client.CandidateClientService;
 import br.edu.ulbra.election.election.enums.StateCodes;
 import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.input.v1.ElectionInput;
 import br.edu.ulbra.election.election.model.Election;
+import br.edu.ulbra.election.election.output.v1.CandidateOutput;
 import br.edu.ulbra.election.election.output.v1.ElectionOutput;
 import br.edu.ulbra.election.election.output.v1.GenericOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
+import feign.FeignException;
+
 import org.apache.commons.lang.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
@@ -20,14 +24,15 @@ import java.util.List;
 public class ElectionService {
 
     private final ElectionRepository electionRepository;
+    private final CandidateClientService candidateClientService;
     private final ModelMapper modelMapper;
     
     @Autowired
-    public ElectionService(ElectionRepository electionRepository, ModelMapper modelMapper){
+    public ElectionService(ElectionRepository electionRepository, ModelMapper modelMapper, CandidateClientService candidateClientService){
         this.electionRepository = electionRepository;
         this.modelMapper = modelMapper;
+        this.candidateClientService = candidateClientService;
     }
-
 
     private static final String MESSAGE_INVALID_ID = "Invalid id";
     private static final String MESSAGE_ELECTION_NOT_FOUND = "Election not found";
@@ -70,6 +75,8 @@ public class ElectionService {
             throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
         }
 
+        validadeElectionWithCandidate(electionId);
+        
         election.setStateCode(electionInput.getStateCode());
         election.setDescription(electionInput.getDescription());
         election.setYear(electionInput.getYear());
@@ -87,6 +94,8 @@ public class ElectionService {
             throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
         }
 
+        validadeElectionWithCandidate(electionId);
+        
         electionRepository.delete(election);
 
         return new GenericOutput("Election deleted");
@@ -99,6 +108,20 @@ public class ElectionService {
         }
     }
 
+    private void validadeElectionWithCandidate(Long electionId) {
+        try {
+        	List<CandidateOutput> candidates = candidateClientService.getByElectionId(electionId);
+        	
+        	if (candidates.size() > 0) {
+        		throw new GenericOutputException("Election with linked candidates");
+        	}
+        } catch (FeignException e) {
+        	if (e.status() == 500) {
+                throw new GenericOutputException("Invalid Candidates");
+            }
+        }
+    }
+    
     private void validateInput(ElectionInput electionInput){
         if (StringUtils.isBlank(electionInput.getDescription()) || electionInput.getDescription().length() < 5){
             throw new GenericOutputException("Invalid Description");

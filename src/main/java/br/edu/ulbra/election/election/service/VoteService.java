@@ -1,45 +1,86 @@
 package br.edu.ulbra.election.election.service;
 
+import br.edu.ulbra.election.election.client.CandidateClientService;
 import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.input.v1.VoteInput;
 import br.edu.ulbra.election.election.model.Election;
 import br.edu.ulbra.election.election.model.Vote;
+import br.edu.ulbra.election.election.output.v1.CandidateOutput;
 import br.edu.ulbra.election.election.output.v1.GenericOutput;
+import br.edu.ulbra.election.election.output.v1.VoteOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
 import br.edu.ulbra.election.election.repository.VoteRepository;
+import feign.FeignException;
+
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 @Service
 public class VoteService {
 
     private final VoteRepository voteRepository;
-
     private final ElectionRepository electionRepository;
-
+    private final CandidateClientService candidateClientService;
+    private final ModelMapper modelMapper;
+    
     @Autowired
-    public VoteService(VoteRepository voteRepository, ElectionRepository electionRepository){
+    public VoteService(VoteRepository voteRepository, ElectionRepository electionRepository, CandidateClientService candidateClientService, ModelMapper modelMapper){
         this.voteRepository = voteRepository;
         this.electionRepository = electionRepository;
+        this.candidateClientService = candidateClientService;
+        this.modelMapper = modelMapper;
     }
 
+    public List<VoteOutput> getByVoterId(Long voterId) {
+    	Type voteOutputListType = new TypeToken<List<VoteOutput>>(){}.getType();
+        return modelMapper.map(voteRepository.findByVoterId(voterId), voteOutputListType);
+    }
+    
+    public List<VoteOutput> getByElectionId(Long electionId) {
+    	Type voteOutputListType = new TypeToken<List<VoteOutput>>(){}.getType();
+        return modelMapper.map(voteRepository.findByElectionId(electionId), voteOutputListType);
+    }
+    
     public GenericOutput electionVote(VoteInput voteInput){
 
         Election election = validateInput(voteInput.getElectionId(), voteInput);
+        
+        Vote voted = voteRepository.findFirstByVoterIdAndElectionId(voteInput.getVoterId(), voteInput.getElectionId());
+        if (voted != null) {
+        	throw new GenericOutputException("Voter already voted in this election");
+        }
+        
         Vote vote = new Vote();
         vote.setElection(election);
         vote.setVoterId(voteInput.getVoterId());
 
         if (voteInput.getCandidateNumber() == null){
             vote.setBlankVote(true);
+            vote.setNullVote(false);
         } else {
             vote.setBlankVote(false);
+            
+            try {
+            	CandidateOutput candidateOutput = candidateClientService.getFirstByNumberElectionAndElectionId(voteInput.getCandidateNumber(), voteInput.getElectionId());
+            	
+            	if (candidateOutput == null) {
+            		vote.setNullVote(true);
+            	} else {
+            		vote.setCandidateId(voteInput.getCandidateNumber());
+            		vote.setNullVote(false);
+            	}
+            	
+            } catch (FeignException e){
+                if (e.status() == 500) {
+                    throw new GenericOutputException("Invalid Candidate");
+                }
+            }
         }
-
-        // TODO: Validate null candidate
-        vote.setNullVote(false);
 
         voteRepository.save(vote);
 
@@ -58,9 +99,11 @@ public class VoteService {
         if (election == null){
             throw new GenericOutputException("Invalid Election");
         }
+        
         if (voteInput.getVoterId() == null){
             throw new GenericOutputException("Invalid Voter");
         }
+        
         // TODO: Validate voter
 
         return election;
