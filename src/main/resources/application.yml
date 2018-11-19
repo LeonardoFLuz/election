@@ -33,3 +33,8 @@ info:
     name: Election
     creator-name: Tales Bitelo Viegas
     creator-email: tales.viegas@ulbra.br
+url:
+  voter-service: 'http://localhost:8081'
+  candidate-service: 'http://localhost:8082'
+  party-service: 'http://localhost:8083'
+  election-service: 'http://localhost:8084'

@@ -1,12 +1,19 @@
 package br.edu.ulbra.election.election.service;
 
+import br.edu.ulbra.election.election.client.CandidateClientService;
+import br.edu.ulbra.election.election.client.VoteClientService;
 import br.edu.ulbra.election.election.enums.StateCodes;
 import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.input.v1.ElectionInput;
 import br.edu.ulbra.election.election.model.Election;
+import br.edu.ulbra.election.election.model.Vote;
 import br.edu.ulbra.election.election.output.v1.ElectionOutput;
+import br.edu.ulbra.election.election.output.v1.VoteOutput;
 import br.edu.ulbra.election.election.output.v1.GenericOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
+import br.edu.ulbra.election.election.repository.VoteRepository;
+import feign.FeignException;
+
 import org.apache.commons.lang.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
@@ -15,17 +22,26 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ElectionService {
 
     private final ElectionRepository electionRepository;
+    private final VoteRepository voteRepository;
+    private final VoteClientService voteClientService;
+    private final CandidateClientService candidateClientService;
+    
     private final ModelMapper modelMapper;
     
+    
     @Autowired
-    public ElectionService(ElectionRepository electionRepository, ModelMapper modelMapper){
-        this.electionRepository = electionRepository;
+    public ElectionService(ElectionRepository electionRepository, VoteRepository voteRepository, ModelMapper modelMapper, VoteClientService voteClientService, CandidateClientService candidateClientService){
+    	this.electionRepository = electionRepository;
+    	this.voteRepository = voteRepository;
         this.modelMapper = modelMapper;
+        this.voteClientService = voteClientService;
+        this.candidateClientService = candidateClientService;
     }
 
 
@@ -62,6 +78,8 @@ public class ElectionService {
         if (electionId == null){
             throw new GenericOutputException(MESSAGE_INVALID_ID);
         }
+        
+        
         validateInput(electionInput);
         validateDuplicate(electionInput, electionId);
 
@@ -81,7 +99,14 @@ public class ElectionService {
         if (electionId == null){
             throw new GenericOutputException(MESSAGE_INVALID_ID);
         }
-
+        
+        Vote vote = voteRepository.getById(electionId);
+        if (vote.getElectionId() == electionId){
+            throw new GenericOutputException(MESSAGE_INVALID_ID);
+        }
+        
+        
+                
         Election election = electionRepository.findById(electionId).orElse(null);
         if (election == null){
             throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
@@ -92,7 +117,9 @@ public class ElectionService {
         return new GenericOutput("Election deleted");
     }
 
-    private void validateDuplicate(ElectionInput electionInput, Long id){
+    
+
+	private void validateDuplicate(ElectionInput electionInput, Long id){
         Election election = electionRepository.findFirstByYearAndStateCodeAndDescription(electionInput.getYear(), electionInput.getStateCode(), electionInput.getDescription());
         if (election != null && !election.getId().equals(id)){
             throw new GenericOutputException("Duplicate Code");
@@ -114,6 +141,13 @@ public class ElectionService {
         if (electionInput.getYear() == null || electionInput.getYear() < 2000 || electionInput.getYear() > 2200){
             throw new GenericOutputException("Invalid Year");
         }
+    }
+    public ElectionOutput toElectionOutput(Election election){
+    	ElectionOutput electionOutput = modelMapper.map(election, ElectionOutput.class);
+    	CandidateOutput candidateOutput = candidateClientService.getById(election.getCandidateId());
+    	electionOutput.setCandidateOutput(candidateOutput);
+        
+        return electionOutput;
     }
 
 }
