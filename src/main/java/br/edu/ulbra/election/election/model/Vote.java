@@ -24,8 +24,6 @@ public class Vote {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Election election;
 
-	
-	
     public Long getId() {
         return id;
     }
@@ -49,7 +47,6 @@ public class Vote {
     public void setCandidateId(Long candidateId) {
         this.candidateId = candidateId;
     }
-    
     
     public Boolean getBlankVote() {
         return blankVote;

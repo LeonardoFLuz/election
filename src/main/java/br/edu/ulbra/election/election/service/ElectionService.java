@@ -1,7 +1,6 @@
 package br.edu.ulbra.election.election.service;
 
 import br.edu.ulbra.election.election.client.CandidateClientService;
-import br.edu.ulbra.election.election.client.VoteClientService;
 import br.edu.ulbra.election.election.enums.StateCodes;
 import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.input.v1.ElectionInput;
@@ -9,7 +8,6 @@ import br.edu.ulbra.election.election.model.Election;
 import br.edu.ulbra.election.election.output.v1.CandidateOutput;
 import br.edu.ulbra.election.election.model.Vote;
 import br.edu.ulbra.election.election.output.v1.ElectionOutput;
-import br.edu.ulbra.election.election.output.v1.VoteOutput;
 import br.edu.ulbra.election.election.output.v1.GenericOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
 import br.edu.ulbra.election.election.repository.VoteRepository;
@@ -23,7 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ElectionService {
@@ -31,13 +28,14 @@ public class ElectionService {
     private final ElectionRepository electionRepository;
     private final CandidateClientService candidateClientService;
     private final ModelMapper modelMapper;
-    
+    private final VoteRepository voteRepository;
     
     @Autowired
-    public ElectionService(ElectionRepository electionRepository, ModelMapper modelMapper, CandidateClientService candidateClientService){
-        this.electionRepository = electionRepository;
+    public ElectionService(ElectionRepository electionRepository, ModelMapper modelMapper, CandidateClientService candidateClientService, VoteRepository voteRepository){
+    	this.electionRepository = electionRepository;
         this.modelMapper = modelMapper;
         this.candidateClientService = candidateClientService;
+        this.voteRepository = voteRepository;
     }
 
     private static final String MESSAGE_INVALID_ID = "Invalid id";
@@ -74,18 +72,17 @@ public class ElectionService {
             throw new GenericOutputException(MESSAGE_INVALID_ID);
         }
         
-        
         validateInput(electionInput);
         validateDuplicate(electionInput, electionId);
-
-        Vote vote = voteRepository.findById(electionId).orElse(null);
-        if (electionId == vote.getElection().getId()){
-        	throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
-        }
         
         Election election = electionRepository.findById(electionId).orElse(null);
         if (election == null){
             throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
+        }
+        
+        List<Vote> votes = voteRepository.findByElectionId(electionId);
+        if (votes.size() > 0){
+        	throw new GenericOutputException("Election with votes");
         }
 
         validadeElectionWithCandidate(electionId);
@@ -102,25 +99,22 @@ public class ElectionService {
             throw new GenericOutputException(MESSAGE_INVALID_ID);
         }
         
-        Vote vote = voteRepository.findById(electionId).orElse(null);
-        if (electionId == vote.getElection().getId()){
-        	throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
-        }
-        
-                
         Election election = electionRepository.findById(electionId).orElse(null);
         if (election == null){
             throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
         }
-
+        
+        List<Vote> votes = voteRepository.findByElectionId(electionId);
+        if (votes.size() > 0){
+        	throw new GenericOutputException("Election with votes");
+        }
+        
         validadeElectionWithCandidate(electionId);
         
         electionRepository.delete(election);
 
         return new GenericOutput("Election deleted");
     }
-
-    
 
 	private void validateDuplicate(ElectionInput electionInput, Long id){
         Election election = electionRepository.findFirstByYearAndStateCodeAndDescription(electionInput.getYear(), electionInput.getStateCode(), electionInput.getDescription());
@@ -158,8 +152,6 @@ public class ElectionService {
         if (electionInput.getYear() == null || electionInput.getYear() < 2000 || electionInput.getYear() > 2200){
             throw new GenericOutputException("Invalid Year");
         }
-        
-        
     }
     
 }

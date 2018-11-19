@@ -1,6 +1,7 @@
 package br.edu.ulbra.election.election.service;
 
 import br.edu.ulbra.election.election.client.CandidateClientService;
+import br.edu.ulbra.election.election.client.VoterClientService;
 import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.input.v1.VoteInput;
 import br.edu.ulbra.election.election.model.Election;
@@ -25,15 +26,17 @@ public class VoteService {
 
     private final VoteRepository voteRepository;
     private final ElectionRepository electionRepository;
+    private final VoterClientService voterClientService;
     private final CandidateClientService candidateClientService;
     private final ModelMapper modelMapper;
     
     @Autowired
-    public VoteService(VoteRepository voteRepository, ElectionRepository electionRepository, CandidateClientService candidateClientService, ModelMapper modelMapper){
+    public VoteService(VoteRepository voteRepository, ElectionRepository electionRepository, CandidateClientService candidateClientService, ModelMapper modelMapper, VoterClientService voterClientService){
         this.voteRepository = voteRepository;
         this.electionRepository = electionRepository;
         this.candidateClientService = candidateClientService;
         this.modelMapper = modelMapper;
+        this.voterClientService = voterClientService;
     }
 
     public List<VoteOutput> getByVoterId(Long voterId) {
@@ -82,8 +85,6 @@ public class VoteService {
             }
         }
 
-        voteRepository.save(vote);
-
 		voteRepository.save(vote);
 
 		return new GenericOutput("OK");
@@ -97,13 +98,19 @@ public class VoteService {
 	}
 
 	public Election validateInput(Long electionId, VoteInput voteInput){
+		if (voteInput.getElectionId() == null){
+			throw new GenericOutputException("Invalid Election");
+		}
+		
+		if (voteInput.getVoterId() == null){
+			throw new GenericOutputException("Invalid Voter");
+		}
+		
 		Election election = electionRepository.findById(electionId).orElse(null);
 		if (election == null){
 			throw new GenericOutputException("Invalid Election");
 		}
-		if (voteInput.getVoterId() == null){
-			throw new GenericOutputException("Invalid Voter");
-		}
+		
 		try {
         	voterClientService.getById(voteInput.getVoterId());
         } catch (FeignException e){
@@ -111,29 +118,7 @@ public class VoteService {
                 throw new GenericOutputException("Invalid Voter");
             }
         }
-		if (voteInput.getElectionId() == null){
-			throw new GenericOutputException("Invalid Election");
-		}
 		
-		try {
-			electionClientService.getById(voteInput.getElectionId());
-		} catch (FeignException e){
-			if (e.status() == 500) {
-				throw new GenericOutputException("Invalid Election");
-			}
-		}
-		// TODO: Validate voter
-
 		return election;
 	}
-	 public VoteOutput toCVoteOutput(Vote vote){
-	        VoteOutput voteOutput = modelMapper.map(vote, VoteOutput.class);
-	        ElectionOutput electionOutput = electionClientService.getById(voteOutput.getElectionId());
-	        voteOutput.setElectionOutput(electionOutput);
-	        
-	        VoterOutput voterOutput = voterClientService.getById(vote.getVoterId());
-	        voteOutput.setVoterOutput(voterOutput);
-	        return voteOutput;
-	    }
-	
 }
