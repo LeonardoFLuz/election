@@ -55,7 +55,7 @@ public class VoteService {
         
         Vote voted = voteRepository.findFirstByVoterIdAndElectionId(voteInput.getVoterId(), voteInput.getElectionId());
         if (voted != null) {
-        	throw new GenericOutputException("Voter already voted in this election");
+        	throw new GenericOutputException("Voter already voted in this election.");
         }
         
         Vote vote = new Vote();
