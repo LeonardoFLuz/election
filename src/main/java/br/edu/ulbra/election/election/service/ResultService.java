@@ -22,27 +22,24 @@ public class ResultService {
 
 	public ElectionCandidateResultOutput getResultByCandidate(Long candidateId) {
 
-	 
-		ElectionCandidateResultOutput result = new ElectionCandidateResultOutput();    
-
-		        
+		ElectionCandidateResultOutput resultado = new ElectionCandidateResultOutput();      
 		try {
-			
-	        Long totalVotes;
-	        result.setCandidate(candidateClientService.getById(candidateId));
+			Long totalVotes;
+			resultado.setCandidate(candidateClientService.getById(candidateId));
 
-	        totalVotes = new Long ((long) voteRepository.findByCandidateId(candidateId).size());
-	        result.setTotalVotes(totalVotes);
+			totalVotes = new Long ((long) voteRepository.findByCandidateId(candidateId).size());
 
-			
+			if (totalVotes != null) {
+				resultado.setTotalVotes(totalVotes);
+			}else {
+				resultado.setTotalVotes((long) 0);
+			}
+
 		} catch (FeignException e) {
 			if (e.status() == 500) {
 				throw new GenericOutputException("Candidate not found");
 			}
 		}
-		
-		return result;
-		
+		return resultado;
 	}
-
 }
