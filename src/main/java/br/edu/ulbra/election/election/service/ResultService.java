@@ -29,10 +29,10 @@ public class ResultService {
 
 			totalVotes = new Long ((long) voteRepository.findByCandidateId(candidateId).size());
 
-			if (totalVotes != null) {
-				resultado.setTotalVotes(totalVotes);
-			}else {
+			if (totalVotes == null) {
 				resultado.setTotalVotes((long) 0);
+			}else {
+				resultado.setTotalVotes(totalVotes);
 			}
 
 		} catch (FeignException e) {
