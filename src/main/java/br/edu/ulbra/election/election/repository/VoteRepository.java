@@ -1,14 +1,20 @@
 package br.edu.ulbra.election.election.repository;
 
+import br.edu.ulbra.election.election.model.Election;
 import br.edu.ulbra.election.election.model.Vote;
-
-import java.util.List;
-
 import org.springframework.data.repository.CrudRepository;
 
 public interface VoteRepository extends CrudRepository<Vote, Long> {
-	Vote findFirstByVoterIdAndElectionId(Long voterId, Long electionId);
-	List<Vote> findByVoterId(Long voterId);
-	List<Vote> findByElectionId(Long electionId);
-	List<Vote> findByCandidateId(Long CandidateId);
+
+    Vote findFirstByVoterIdAndElection(Long voterId, Election election);
+
+    Long countByElection(Election election);
+
+    Long countByElectionAndBlankVote(Election election, Boolean blankVote);
+
+    Long countByElectionAndNullVote(Election election, Boolean nullVote);
+
+    Long countByCandidateId(Long candidateId);
+
+    Long countByVoterId(Long voterId);
 }

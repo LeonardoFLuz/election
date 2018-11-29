@@ -6,6 +6,7 @@ public enum StateCodes {
     AP,
     AM,
     BA,
+    BR,
     CE,
     DF,
     ES,
@@ -27,6 +28,6 @@ public enum StateCodes {
     SC,
     SP,
     SE,
-    TO,
-	BR;
+    TO;
+
 }

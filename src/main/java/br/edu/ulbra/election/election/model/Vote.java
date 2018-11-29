@@ -14,7 +14,7 @@ public class Vote {
 
     @Column (nullable = true)
     private Long candidateId;
-        
+
     @Column (nullable = false)
     private Boolean blankVote;
 
@@ -47,7 +47,7 @@ public class Vote {
     public void setCandidateId(Long candidateId) {
         this.candidateId = candidateId;
     }
-    
+
     public Boolean getBlankVote() {
         return blankVote;
     }
@@ -71,6 +71,4 @@ public class Vote {
     public void setElection(Election election) {
         this.election = election;
     }
-
-		
 }
