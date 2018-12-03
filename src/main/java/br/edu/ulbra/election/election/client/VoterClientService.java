@@ -1,7 +1,6 @@
 package br.edu.ulbra.election.election.client;
 
 import br.edu.ulbra.election.election.output.v1.VoterOutput;
-import feign.RequestLine;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.openfeign.FeignClient;
