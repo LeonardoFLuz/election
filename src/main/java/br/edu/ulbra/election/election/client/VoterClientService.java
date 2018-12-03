@@ -1,6 +1,8 @@
 package br.edu.ulbra.election.election.client;
 
 import br.edu.ulbra.election.election.output.v1.VoterOutput;
+import feign.RequestLine;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Service;
@@ -20,11 +22,18 @@ public class VoterClientService {
     public VoterOutput getById(Long voterId){
         return voterClient.getById(voterId);
     }
+    
+    public VoterOutput checkToken(String token) {
+    	return voterClient.checkToken(token);
+    }
 
     @FeignClient(name = "voter-service", url = "${url.voter-service}")
     private interface VoterClient {
 
         @GetMapping("/v1/voter/{voterId}")
         VoterOutput getById(@PathVariable(name="voterId") Long voterId);
+        
+        @GetMapping("/v1/login/check/{token}")
+        VoterOutput checkToken(@PathVariable(name="token") String token);
     }
 }

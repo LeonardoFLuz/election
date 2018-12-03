@@ -7,12 +7,17 @@ import br.edu.ulbra.election.election.input.v1.VoteInput;
 import br.edu.ulbra.election.election.model.Election;
 import br.edu.ulbra.election.election.model.Vote;
 import br.edu.ulbra.election.election.output.v1.GenericOutput;
+import br.edu.ulbra.election.election.output.v1.VoterOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
 import br.edu.ulbra.election.election.repository.VoteRepository;
 import feign.FeignException;
+import feign.Response;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 
 @Service
@@ -34,9 +39,8 @@ public class VoteService {
         this.candidateClientService = candidateClientService;
     }
 
-    public GenericOutput electionVote(VoteInput voteInput){
-
-        Election election = validateInput(voteInput.getElectionId(), voteInput);
+    public GenericOutput electionVote(VoteInput voteInput, String token){
+        Election election = validateInput(voteInput.getElectionId(), voteInput, token);
         Vote vote = new Vote();
         vote.setElection(election);
         vote.setVoterId(voteInput.getVoterId());
@@ -60,14 +64,14 @@ public class VoteService {
         return new GenericOutput("OK");
     }
 
-    public GenericOutput multiple(List<VoteInput> voteInputList){
+    public GenericOutput multiple(List<VoteInput> voteInputList, String token){
         for (VoteInput voteInput : voteInputList){
-            this.electionVote(voteInput);
+            this.electionVote(voteInput, token);
         }
         return new GenericOutput("OK");
     }
 
-    public Election validateInput(Long electionId, VoteInput voteInput){
+    public Election validateInput(Long electionId, VoteInput voteInput, String token){
         Election election = electionRepository.findById(electionId).orElse(null);
         if (election == null){
             throw new GenericOutputException("Invalid Election");
@@ -82,12 +86,27 @@ public class VoteService {
                 throw new GenericOutputException("Invalid Voter");
             }
         }
+        
+        validateToken(voteInput.getVoterId(), token);
 
         Vote vote = voteRepository.findFirstByVoterIdAndElection(voteInput.getVoterId(), election);
         if (vote != null){
             throw new GenericOutputException("Voter already vote on that election");
         }
         return election;
+    }
+    
+    private void validateToken(Long voterId, String token) {
+    	try {
+            VoterOutput voterOutput =  voterClientService.checkToken(token);
+            if (!voterOutput.getId().equals(voterId)) {
+            	throw new GenericOutputException("Invalid login user");
+            }
+        } catch (FeignException ex){
+            if (ex.status() == 500){
+                throw new GenericOutputException("Invalid token");
+            }
+        }
     }
 
     public GenericOutput findVotesByVoter(Long voterId) {
